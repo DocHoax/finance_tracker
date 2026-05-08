@@ -1,19 +1,10 @@
 import { ArrowDownRight, ArrowUpRight, BadgeDollarSign, WalletCards } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
-
-const recentTransactions = [
-  { name: 'Grocery run', category: 'Food', amount: -62.48, date: 'Today' },
-  { name: 'Salary', category: 'Income', amount: 3200, date: 'Yesterday' },
-  { name: 'Train pass', category: 'Transport', amount: -45, date: '2 days ago' },
-];
-
-const budgetSummary = [
-  { label: 'Food', used: 68, limit: 250 },
-  { label: 'Transport', used: 45, limit: 120 },
-  { label: 'Entertainment', used: 90, limit: 150 },
-];
+import { dashboardSnapshot, formatCurrency } from '../lib/financeDashboard';
 
 export function DashboardPage() {
+  const { currentBalance, monthlyIncome, monthlyExpenses, budgetSummary, recentTransactions } = dashboardSnapshot;
+
   return (
     <AppShell>
       <section className="space-y-8">
@@ -22,7 +13,7 @@ export function DashboardPage() {
             <p className="text-sm uppercase tracking-[0.24em] text-slate-400">Current balance</p>
             <div className="mt-4 flex items-end justify-between gap-4">
               <div>
-                <h2 className="text-4xl font-semibold text-white">$8,420.18</h2>
+                <h2 className="text-4xl font-semibold text-white">{formatCurrency(currentBalance)}</h2>
                 <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300">
                   A live summary of income, expenses, budgets, and savings goals will land here once the Supabase data layer is wired.
                 </p>
@@ -34,8 +25,8 @@ export function DashboardPage() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-            <MetricCard icon={ArrowUpRight} label="Income this month" value="$4,920" tone="text-emerald-300" />
-            <MetricCard icon={ArrowDownRight} label="Expenses this month" value="$2,310" tone="text-rose-300" />
+            <MetricCard icon={ArrowUpRight} label="Income this month" value={formatCurrency(monthlyIncome, 0, 0)} tone="text-emerald-300" />
+            <MetricCard icon={ArrowDownRight} label="Expenses this month" value={formatCurrency(monthlyExpenses, 0, 0)} tone="text-rose-300" />
           </div>
         </div>
 
@@ -51,17 +42,16 @@ export function DashboardPage() {
 
             <div className="mt-5 space-y-4">
               {budgetSummary.map((budget) => {
-                const percent = Math.min((budget.used / budget.limit) * 100, 100);
                 return (
                   <div key={budget.label} className="space-y-2">
                     <div className="flex items-center justify-between text-sm text-slate-300">
                       <span>{budget.label}</span>
                       <span>
-                        ${budget.used} / ${budget.limit}
+                        {formatCurrency(budget.used, 0, 0)} / {formatCurrency(budget.limit, 0, 0)}
                       </span>
                     </div>
                     <div className="h-2 rounded-full bg-white/10">
-                      <div className="h-2 rounded-full bg-gradient-to-r from-accent to-emerald-300" style={{ width: `${percent}%` }} />
+                      <div className="h-2 rounded-full bg-gradient-to-r from-accent to-emerald-300" style={{ width: `${budget.percentUsed}%` }} />
                     </div>
                   </div>
                 );
@@ -78,11 +68,11 @@ export function DashboardPage() {
                   <div>
                     <p className="font-medium text-white">{transaction.name}</p>
                     <p className="text-sm text-slate-400">
-                      {transaction.category} · {transaction.date}
+                      {transaction.category} · {transaction.dateLabel}
                     </p>
                   </div>
-                  <p className={transaction.amount < 0 ? 'text-rose-300' : 'text-emerald-300'}>
-                    {transaction.amount < 0 ? '-' : '+'}${Math.abs(transaction.amount).toFixed(2)}
+                  <p className={transaction.transactionType === 'expense' ? 'text-rose-300' : 'text-emerald-300'}>
+                    {transaction.transactionType === 'expense' ? '-' : '+'}{formatCurrency(transaction.amount)}
                   </p>
                 </article>
               ))}
